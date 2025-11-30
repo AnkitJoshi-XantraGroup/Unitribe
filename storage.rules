@@ -1,0 +1,77 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'administrator';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate file size (max 10MB)
+    function isValidSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Validate image file types
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Validate document file types
+    function isDocument() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*');
+    }
+
+    // User profile photos
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isImage() && isValidSize();
+    }
+
+    // News attachments
+    match /news/{newsId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize();
+    }
+
+    // Event images
+    match /events/{eventId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Club images
+    match /clubs/{clubId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Vendor offer images
+    match /vendor_offers/{offerId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Attendance documents (CSV imports)
+    match /attendance/{classId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isDocument() && isValidSize();
+    }
+
+    // Default deny all
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'administrator';
+    }
+
+    function isProfessor() {
+      return isAuthenticated() && getUserData().role == 'professor';
+    }
+
+    function isStudent() {
+      return isAuthenticated() && getUserData().role == 'student';
+    }
+
+    function isParent() {
+      return isAuthenticated() && getUserData().role == 'parent';
+    }
+
+    function isVendor() {
+      return isAuthenticated() && getUserData().role == 'vendor';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function canApprove() {
+      return isAdmin();
+    }
+
+    function canCreate() {
+      return isAdmin() || isProfessor();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // News collection
+    match /news/{newsId} {
+      allow read: if isAuthenticated() && (
+        resource.data.status == 'published' ||
+        isOwner(resource.data.authorId) ||
+        isAdmin()
+      );
+      allow create: if canCreate();
+      allow update: if isOwner(resource.data.authorId) || canApprove();
+      allow delete: if isAdmin();
+    }
+
+    // Attendance collection
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.studentId) ||
+        isOwner(resource.data.professorId) ||
+        isAdmin() ||
+        (isParent() && resource.data.studentId in getUserData().childrenIds)
+      );
+      allow create: if canCreate();
+      allow update: if isOwner(resource.data.professorId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Timetable collection
+    match /timetable/{timetableId} {
+      allow read: if isAuthenticated();
+      allow create: if canCreate();
+      allow update: if isOwner(resource.data.professorId) || canApprove();
+      allow delete: if isAdmin();
+    }
+
+    // Clubs collection
+    match /clubs/{clubId} {
+      allow read: if isAuthenticated();
+      allow create: if canCreate();
+      allow update: if isOwner(resource.data.creatorId) ||
+                       request.auth.uid in resource.data.moderatorIds ||
+                       canApprove();
+      allow delete: if isAdmin();
+    }
+
+    // Club memberships
+    match /club_memberships/{membershipId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.userId) ||
+                       canApprove();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      allow read: if isAuthenticated() && (
+        resource.data.status == 'published' ||
+        isOwner(resource.data.organizerId) ||
+        isAdmin()
+      );
+      allow create: if canCreate();
+      allow update: if isOwner(resource.data.organizerId) || canApprove();
+      allow delete: if isAdmin();
+    }
+
+    // Event RSVPs
+    match /event_rsvps/{rsvpId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Vendor offers collection
+    match /vendor_offers/{offerId} {
+      allow read: if isAuthenticated() && (
+        resource.data.status == 'published' ||
+        isOwner(resource.data.vendorId) ||
+        isAdmin()
+      );
+      allow create: if isVendor();
+      allow update: if isOwner(resource.data.vendorId) || canApprove();
+      allow delete: if isOwner(resource.data.vendorId) || isAdmin();
+    }
+
+    // Classes collection
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Departments collection
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Audit logs collection
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if false; // Audit logs are immutable
+      allow delete: if false; // Audit logs cannot be deleted
+    }
+  }
+}
