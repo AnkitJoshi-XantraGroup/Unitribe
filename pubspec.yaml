@@ -89,7 +89,9 @@ flutter:
     - assets/icons/
     - assets/logos/
 
-  fonts:
-    - family: CustomIcons
-      fonts:
-        - asset: assets/fonts/CustomIcons.ttf
+  # fonts:
+  #   - family: CustomIcons
+  #     fonts:
+  #       - asset: assets/fonts/CustomIcons.ttf
+  # Uncomment above and add your custom font file when needed.
+  # Currently using Google Fonts (Inter) via google_fonts package.
