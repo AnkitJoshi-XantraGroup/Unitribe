@@ -2,6 +2,10 @@
 
 A comprehensive university/college mobile application built with Flutter and Firebase, featuring role-based access control, approval workflows, and multi-platform support (Mobile, Web, Windows).
 
+**Package Name:** `com.xantra.unitribe`
+**Developer:** Xantra
+**Version:** 1.0.0
+
 ## 📱 Features
 
 ### Core Features

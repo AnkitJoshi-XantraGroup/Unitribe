@@ -1,0 +1,15 @@
+// This is a template file showing the required bundle identifier
+// When you open this project in Xcode, make sure to set:
+// PRODUCT_BUNDLE_IDENTIFIER = com.xantra.unitribe
+//
+// You can do this by:
+// 1. Open ios/Runner.xcworkspace in Xcode
+// 2. Select Runner project in the left sidebar
+// 3. Select Runner target
+// 4. Go to General tab
+// 5. Set Bundle Identifier to: com.xantra.unitribe
+//
+// Or update it in Build Settings:
+// 1. Go to Build Settings tab
+// 2. Search for "Product Bundle Identifier"
+// 3. Set to: com.xantra.unitribe
